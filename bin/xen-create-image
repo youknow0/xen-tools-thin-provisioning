@@ -333,6 +333,13 @@ and EVMS EXAMPLE.
    --lvm=vg     Specify the volume group to save images within.
                 If you do not wish to use LVM specify --dir or --evms.
                 (These three options are mutually exclusive.)
+   
+   --lvm_thin=thin pool
+                Specify the thin pool name on which thin LVM volumes 
+                are created.
+
+                This enables thin provisioned LVM volumes. Note that 
+                you need a LVM version which supports this.
 
 
 =head1 NOTES
@@ -1608,6 +1615,7 @@ sub parseCommandLineArguments
             "output=s",     \&checkOption,
             "extension:s",  \&checkOption,
             "dontformat",   \&checkOption,
+            "lvm_thin=s",   \$CONFIG{ 'lvm_thin' },
 
             # Help options
             "debug!",     \$CONFIG{ 'debug' },
@@ -3035,8 +3043,17 @@ sub createLVMBits
         #
         # The commands to create the volume.
         #
-        my $disk_cmd =
-          "lvcreate $CONFIG{'lvm'} --yes -L $partition->{'size'} -n $disk";
+        my $disk_cmd;
+        if ( $CONFIG{ 'lvm_thin' } )
+        {
+            $disk_cmd = 
+              "lvcreate -T $CONFIG{'lvm'}/$CONFIG{'lvm_thin'} --yes -V $partition->{'size'} -n $disk";
+        } 
+        else 
+        {
+            $disk_cmd =
+              "lvcreate $CONFIG{'lvm'} --yes -L $partition->{'size'} -n $disk";
+        }
 
         #
         # Create the volume
